@@ -2,6 +2,7 @@ import math
 import random
 import sys
 import time
+import os
 
 import pygame as pg
 
@@ -9,6 +10,14 @@ import pygame as pg
 WIDTH = 1600  # ゲームウィンドウの幅
 HEIGHT = 900  # ゲームウィンドウの高さ
 
+def load_sound(file):
+    """指定した名称のファイルをfigフォルダから出して
+    音を出力する準備をする
+    """
+
+    file = os.path.join( "fig", file)
+    sound = pg.mixer.Sound(file)
+    return sound
 
 def check_bound(obj: pg.Rect) -> tuple[bool, bool]:
     """
@@ -38,7 +47,7 @@ def calc_orientation(org: pg.Rect, dst: pg.Rect) -> tuple[float, float]:
 
 class Hero(pg.sprite.Sprite):
     """
-    ゲームキャラクター（こうかとん）に関するクラス
+    主人公）に関するクラス
     """
     delta = {  # 押下キーと移動量の辞書
         pg.K_UP: (0, -1),
@@ -47,14 +56,13 @@ class Hero(pg.sprite.Sprite):
         pg.K_RIGHT: (+1, 0),
     }
 
-    def __init__(self, num: int, xy: tuple[int, int]):
+    def __init__(self,  xy: tuple[int, int]):
         """
-        こうかとん画像Surfaceを生成する
-        引数1 num：こうかとん画像ファイル名の番号
-        引数2 xy：こうかとん画像の位置座標タプル
+        主人公画像Surfaceを生成する
+        引数2 xy：主人公画像の位置座標タプル
         """
         super().__init__()
-        img0 = pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 2.0)
+        img0 = pg.transform.rotozoom(pg.image.load(f"fig/hero.png"), 0, 0.1)
         img = pg.transform.flip(img0, True, False)  # デフォルトのこうかとん
         self.imgs = {
             (+1, 0): img,  # 右
@@ -79,7 +87,7 @@ class Hero(pg.sprite.Sprite):
         引数1 num：こうかとん画像ファイル名の番号
         引数2 screen：画面Surface
         """
-        self.image = pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 2.0)
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 0.1)
         screen.blit(self.image, self.rect)
 
     def update(self, key_lst: list[bool], screen: pg.Surface):
@@ -111,7 +119,7 @@ class Enemy(pg.sprite.Sprite):
     """
     敵機に関するクラス
     """
-    imgs = [pg.image.load(f"fig/alien{i}.png") for i in range(1, 4)]
+    imgs = [pg.transform.rotozoom(pg.image.load(f"fig/ene{i}.png"),0,0.15) for i in range(1, 4)]
     genemy = [(random.randint(0, WIDTH), 0), (random.randint(0, WIDTH), HEIGHT), (0, random.randint(0, HEIGHT)), (WIDTH, random.randint(0, HEIGHT))]
     
     def __init__(self, tower):
@@ -126,7 +134,7 @@ class Enemy(pg.sprite.Sprite):
 
     def update(self, tower, hero: Hero, hate):
         """
-        爆弾を速度ベクトルself.vx, self.vyに基づき移動させる
+        敵を速度ベクトルself.vx, self.vyに基づき移動させる
         引数1 screen：画面Surface
         引数2 towerオブジェクト
         引数3 heroオブジェクト
@@ -143,17 +151,25 @@ class Tower(pg.sprite.Sprite):
     """
     タワーに関するクラス
     """
-    def __init__(self):
+    def __init__(self) :
         super().__init__()
+        self.image=pg.transform.rotozoom(pg.image.load(f"fig/tower.png"), 0, 0.8)
         self.life = 3
-        color = (0, 0, 0)
-        self.image = pg.Surface((50, 50))
-        pg.draw.rect(self.image, color, pg.Rect(0, 0, 20, 20))
         self.rect = self.image.get_rect()
-        self.rect.centerx = WIDTH/2
-        self.rect.centery = HEIGHT/2
+        self.rect.center = WIDTH/2,HEIGHT/2
+
+        self.font = pg.font.Font(None, 50)  #life表示のための用意
+        self.color = (255, 0 , 0)
+        self.displife = self.font.render(f"Life: {self.life}", 0, self.color)
+
     def update(self, screen: pg.Surface):
-        screen.blit(self.image, self.rect)
+        """
+        現在のlifeやタワーを表示する
+        """
+        screen.blit(self.image,self.rect)
+        self.displife = self.font.render(f"Life: {self.life}", 0, self.color)
+        screen.blit(self.displife,(30,HEIGHT-125))    
+
 
 
 class Score:
@@ -180,15 +196,17 @@ class Score:
 def main():
     pg.display.set_caption("守れ！こうかとん")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
-    bg_img = pg.image.load("fig/pg_bg.jpg")
+    bg_img = pg.image.load("fig/bg_natural_mori.jpg")
+    atk_sound = load_sound("紙を破く1.mp3")
+    end_sound = load_sound("チーン1.mp3")
     score = Score()
-    hate = "tower"  # 敵機の攻撃対象をtowerに設定
+    fonto  = pg.font.Font(None, 50)
 
-    hero = Hero(3, (900, 400))
+    hero = Hero( (900, 400))
     tower = Tower()
     emys = pg.sprite.Group()
     emys = pg.sprite.Group()
-
+    hate = "tower"  # 敵機の攻撃対象をtowerに設定
 
     tmr = 0
     trans_hate_tm = 0
@@ -202,6 +220,7 @@ def main():
                 hate = "hero"  # 敵機の攻撃対象をheroに設定
                 trans_hate_tm = 0
                 score.score_up(-10)
+
         screen.blit(bg_img, [0, 0])
          
         if trans_hate_tm > 100:  # 100フレーム経過後
@@ -210,18 +229,30 @@ def main():
         if tmr%40 == 0:  # 40フレームに1回，敵機を出現させる
             emys.add(Enemy(hero))
 
-        for i in pg.sprite.spritecollide(hero, emys, True):
-            score.score_up(1)
+        for emy in pg.sprite.spritecollide(hero, emys, True):
+                emy.kill()
+                if pg.mixer:
+                    atk_sound.play()
+                score.score_up(1)
 
-        for i in pg.sprite.spritecollide(tower, emys, True):
-            tower.life -= 1
-            if tower.life <= 0:
-                hero.change_img(8, screen) # こうかとん悲しみエフェクト
+        for emy in pg.sprite.spritecollide(tower, emys, True):
+            if tower.life >= 2:
+                tower.life -=1  #lifeを減らす
+                emy.kill()  
+            else:
+                screen.blit(pg.transform.rotozoom(pg.image.load("fig/text_gameover.png"),0,0.4),[600,250])
+                hero.change_img("lose", screen) # 悲しみエフェクト
+                end_sound.play()
+                tower.life -=1
                 score.update(screen)
+                tower.update(screen)
+                screen.blit(txt_time, [WIDTH/2, 50])
                 pg.display.update()
                 time.sleep(2)
                 return
-
+            
+        txt_time = fonto.render(str(tmr/50), True, (0, 0 ,0 ))
+        screen.blit(txt_time, [WIDTH/2, 50])
         hero.update(key_lst, screen)
         emys.update(tower, hero, hate)
         emys.draw(screen)
