@@ -152,8 +152,11 @@ class Tower(pg.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.rect.centerx = WIDTH/2
         self.rect.centery = HEIGHT/2
+        self.super = 0
+
     def update(self, screen: pg.Surface):
         screen.blit(self.image, self.rect)
+        self.super -= 1
 
 
 class Score:
@@ -175,7 +178,60 @@ class Score:
     def update(self, screen: pg.Surface):
         self.image = self.font.render(f"Score: {self.score}", 0, self.color)
         screen.blit(self.image, self.rect)
+
+
+class Boss(pg.sprite.Sprite):
+    """
+    ボスに関するクラス
+    """
+    def __init__(self):
+        super().__init__()
+        self.image = pg.transform.rotozoom(pg.image.load("ex05/fig/alien1.png"), 0, 5.0)
+        self.rect = self.image.get_rect()
+        self.rect.center = WIDTH/2, 0
+        self.bound = 200  # 停止位置
+        self.state = "down"  # 降下状態or停止状態
+        self.skill_wait = 100
+        self.vy = 6
+        self.vx = 0
+        self.count_charge = 0
+
+    def update(self, screen):
+        """
+        ボスを速度ベクトルself.vyに基づき移動（降下）させる
+        停止位置_boundまで降下したら，_stateを停止状態に変更する
+        """
+        if self.rect.centery > self.bound:
+            self.vy = 0
+            self.state = "stop"
     
+        if self.rect.centerx <= 0:
+            self.skill_wait = random.randint(50, 300)
+            self.count_charge += 1
+            if self.count_charge > 5:
+                self.state = "down"
+                self.rect.center = WIDTH/2, 200
+                self.vx = 0
+                self.vy = -10
+        if self.rect.centery <= -5000:
+            self.vy = 6
+            self.count_charge = 0
+
+        self.rect.centery += self.vy
+        self.rect.centerx += self.vx
+        screen.blit(self.image, self.rect)
+
+    def charge(self, hero: Hero):
+        """
+        ボスがhero.rectから主人公のy座標を薙ぎ払うように突進する
+        """
+        if self.skill_wait > 0:
+            self.vx, self.vy = 0, 0
+            self.rect.center = WIDTH, hero.rect.centery
+            self.skill_wait -= 1
+        else:
+            self.vx = -25
+
 
 def main():
     pg.display.set_caption("守れ！こうかとん")
@@ -188,6 +244,7 @@ def main():
     tower = Tower()
     emys = pg.sprite.Group()
     emys = pg.sprite.Group()
+    boss = Boss()
 
 
     tmr = 0
@@ -210,6 +267,9 @@ def main():
         if tmr%40 == 0:  # 40フレームに1回，敵機を出現させる
             emys.add(Enemy(hero))
 
+        if boss.state == "stop":
+            boss.charge(hero)
+
         for i in pg.sprite.spritecollide(hero, emys, True):
             score.score_up(1)
 
@@ -221,10 +281,24 @@ def main():
                 pg.display.update()
                 time.sleep(2)
                 return
+        
+        if pg.sprite.collide_rect(boss, tower):
+            if tower.super <= 0:
+                tower.life -= 1
+                tower.super = 100
+            if tower.life <= 0:
+                hero.change_img(8, screen) # こうかとん悲しみエフェクト
+                score.update(screen)
+                pg.display.update()
+                time.sleep(2)
+                return
+                
+
 
         hero.update(key_lst, screen)
         emys.update(tower, hero, hate)
         emys.draw(screen)
+        boss.update(screen)
         tower.update(screen)
         score.update(screen)
         pg.display.update()
