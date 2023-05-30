@@ -254,7 +254,7 @@ class Boss(pg.sprite.Sprite):
 
 
 def main():
-    pg.display.set_caption("守れ！こうかとん")
+    pg.display.set_caption("「ハチミツください」")
     screen = pg.display.set_mode((WIDTH, HEIGHT))
     bg_img = pg.image.load("fig/bg_natural_mori.jpg")
     atk_sound = load_sound("紙を破く1.mp3")
