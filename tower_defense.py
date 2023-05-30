@@ -145,15 +145,25 @@ class Tower(pg.sprite.Sprite):
     """
     def __init__(self):
         super().__init__()
+        self.font = pg.font.Font(None, 50)
         self.life = 3
         color = (0, 0, 0)
         self.image = pg.Surface((50, 50))
+        self.image_h = self.font.render(f"Score: {self.life}/3", 0, (0, 0, 0))
         pg.draw.rect(self.image, color, pg.Rect(0, 0, 20, 20))
         self.rect = self.image.get_rect()
+        self.rect_h =self.image_h.get_rect()
+        self.rect_h.center = 100, 800
         self.rect.centerx = WIDTH/2
         self.rect.centery = HEIGHT/2
+
+    def score_down(self, add):
+        self.life += add
+
     def update(self, screen: pg.Surface):
+        self.image_h = self.font.render(f"Score: {self.life}/3", 0, (0, 0, 0))
         screen.blit(self.image, self.rect)
+        screen.blit(self.image_h, self.rect_h)
 
 
 class Score:
@@ -189,7 +199,6 @@ def main():
     emys = pg.sprite.Group()
     emys = pg.sprite.Group()
 
-
     tmr = 0
     trans_hate_tm = 0
     clock = pg.time.Clock()
@@ -202,6 +211,8 @@ def main():
                 hate = "hero"  # 敵機の攻撃対象をheroに設定
                 trans_hate_tm = 0
                 score.score_up(-10)
+                if tower.life < 3:
+                    tower.score_down(1)
         screen.blit(bg_img, [0, 0])
          
         if trans_hate_tm > 100:  # 100フレーム経過後
