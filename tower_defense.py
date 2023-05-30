@@ -153,21 +153,27 @@ class Tower(pg.sprite.Sprite):
     """
     def __init__(self) :
         super().__init__()
-        self.image=pg.transform.rotozoom(pg.image.load(f"fig/tower.png"), 0, 0.8)
+
         self.life = 3
-        self.rect = self.image.get_rect()
-        self.rect.center = WIDTH/2,HEIGHT/2
-        self.super = 0
+        color = (0, 0, 0)
         self.font = pg.font.Font(None, 50)  #life表示のための用意
-        self.color = (255, 0 , 0)
-        self.displife = self.font.render(f"Life: {self.life}", 0, self.color)
+        self.image=pg.transform.rotozoom(pg.image.load(f"fig/tower.png"), 0, 0.8)
+        self.displfe = self.font.render(f"Life: {self.life}/3", 0, color)
+        self.displfe =self.displfe.get_rect()
+        
+        self.rect = self.image.get_rect()
+        self.rect.center = WIDTH/2,HEIGHT/2      
+        self.super = 0
+        
+    def life_up(self, add):
+        self.life += add
 
     def update(self, screen: pg.Surface):
         """
         現在のlifeやタワーを表示する
         """
         screen.blit(self.image,self.rect)
-        self.displife = self.font.render(f"Life: {self.life}", 0, self.color)
+        self.displife = self.font.render(f"Life: {self.life}", 0, color)
         screen.blit(self.displife,(30,HEIGHT-125))    
         self.rect.centerx = WIDTH/2
         self.rect.centery = HEIGHT/2
@@ -276,6 +282,12 @@ def main():
                 hate = "hero"  # 敵機の攻撃対象をheroに設定
                 trans_hate_tm = 0
                 score.score_up(-5)
+                
+            if event.type == pg.KEYDOWN and event.key == pg.K_LSHIFT and score.score >= 5:
+                if tower.life < 3:
+                    tower.life_up(1)
+                    score.score_up(-5)
+                    
             if event.type == pg.KEYDOWN and event.key == pg.K_TAB:
                 mode = True
 
