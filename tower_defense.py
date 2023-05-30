@@ -130,7 +130,7 @@ class Enemy(pg.sprite.Sprite):
         self.vx, self.vy = calc_orientation(self.rect, tower.rect)
         self.rect.centerx = self.rect.centerx
         self.rect.centery = self.rect.centery+self.rect.height/2
-        self.speed = 6
+        self.speed = 5
 
     def update(self, tower, hero: Hero, hate):
         """
@@ -200,10 +200,10 @@ class Boss(pg.sprite.Sprite):
     """
     def __init__(self):
         super().__init__()
-        self.image = pg.transform.rotozoom(pg.image.load("fig/alien1.png"), 0, 5.0)
+        self.image = pg.transform.rotozoom(pg.image.load("fig/alien1.png"), 0, 3.0)
         self.rect = self.image.get_rect()
         self.rect.center = WIDTH/2, -3000
-        self.bound = 200  # 停止位置
+        self.bound = 100  # 停止位置
         self.state = "down"  # 降下状態or停止状態
         self.skill_wait = 100
         self.vy = 6
@@ -272,10 +272,10 @@ def main():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 return 0
-            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE and score.score >= 10:
+            if event.type == pg.KEYDOWN and event.key == pg.K_SPACE and score.score >= 5:
                 hate = "hero"  # 敵機の攻撃対象をheroに設定
                 trans_hate_tm = 0
-                score.score_up(-10)
+                score.score_up(-5)
             if event.type == pg.KEYDOWN and event.key == pg.K_TAB:
                 mode = True
 
@@ -284,12 +284,12 @@ def main():
         if trans_hate_tm > 100:  # 100フレーム経過後
             hate = "tower"  # 敵機の攻撃対象をtowerにリセット
 
-        if tmr%50 == 0:  # 40フレームに1回，敵機を出現させる
+        if tmr%80 == 0:  # 40フレームに1回，敵機を出現させる
             emys.add(Enemy(hero))
 
         if mode == True and tmr%200 == 0:
             emys.add(Enemy(hero))
-            Enemy.speed = 9
+            Enemy.speed = 8
 
         for emy in pg.sprite.spritecollide(hero, emys, True):
                 emy.kill()
