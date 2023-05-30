@@ -171,6 +171,7 @@ class Tower(pg.sprite.Sprite):
         screen.blit(self.displife,(30,HEIGHT-125))    
         self.rect.centerx = WIDTH/2
         self.rect.centery = HEIGHT/2
+        self.super -= 1
 
 class Score:
     """
@@ -199,9 +200,9 @@ class Boss(pg.sprite.Sprite):
     """
     def __init__(self):
         super().__init__()
-        self.image = pg.transform.rotozoom(pg.image.load("ex05/fig/alien1.png"), 0, 5.0)
+        self.image = pg.transform.rotozoom(pg.image.load("fig/alien1.png"), 0, 5.0)
         self.rect = self.image.get_rect()
-        self.rect.center = WIDTH/2, 0
+        self.rect.center = WIDTH/2, -3000
         self.bound = 200  # 停止位置
         self.state = "down"  # 降下状態or停止状態
         self.skill_wait = 100
@@ -261,6 +262,7 @@ def main():
     emys = pg.sprite.Group()
     hate = "tower"  # 敵機の攻撃対象をtowerに設定
     boss = Boss()
+    mode = False
 
     tmr = 0
     trans_hate_tm = 0
@@ -274,14 +276,20 @@ def main():
                 hate = "hero"  # 敵機の攻撃対象をheroに設定
                 trans_hate_tm = 0
                 score.score_up(-10)
+            if event.type == pg.KEYDOWN and event.key == pg.K_TAB:
+                mode = True
 
         screen.blit(bg_img, [0, 0])
          
         if trans_hate_tm > 100:  # 100フレーム経過後
             hate = "tower"  # 敵機の攻撃対象をtowerにリセット
 
-        if tmr%40 == 0:  # 40フレームに1回，敵機を出現させる
+        if tmr%50 == 0:  # 40フレームに1回，敵機を出現させる
             emys.add(Enemy(hero))
+
+        if mode == True and tmr%200 == 0:
+            emys.add(Enemy(hero))
+            Enemy.speed = 9
 
         for emy in pg.sprite.spritecollide(hero, emys, True):
                 emy.kill()
@@ -298,25 +306,32 @@ def main():
                 hero.change_img("lose", screen) # 悲しみエフェクト
                 end_sound.play()
                 tower.life -=1
-        if boss.state == "stop":
-            boss.charge(hero)
                 score.update(screen)
                 tower.update(screen)
                 screen.blit(txt_time, [WIDTH/2, 50])
                 pg.display.update()
                 time.sleep(2)
                 return
+            
+        if boss.state == "stop":
+            boss.charge(hero)
+
+
 
         if pg.sprite.collide_rect(boss, tower):
             if tower.super <= 0:
                 tower.life -= 1
                 tower.super = 100
-            if tower.life <= 0:
-                hero.change_img(8, screen) # こうかとん悲しみエフェクト
-                score.update(screen)
-                pg.display.update()
-                time.sleep(2)
-                return
+                if tower.life <= 0:
+                    screen.blit(pg.transform.rotozoom(pg.image.load("fig/text_gameover.png"),0,0.4),[600,250])
+                    hero.change_img("lose", screen) # 悲しみエフェクト
+                    tower.life -=1
+                    score.update(screen)
+                    tower.update(screen)
+                    screen.blit(txt_time, [WIDTH/2, 50])
+                    pg.display.update()
+                    time.sleep(2)
+                    return
           
         txt_time = fonto.render(str(tmr/50), True, (0, 0 ,0 ))
         screen.blit(txt_time, [WIDTH/2, 50])
